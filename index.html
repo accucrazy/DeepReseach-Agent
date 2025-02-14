@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Pocket Company Deep Research研究員 by Accucrazy</title>
+    <style>
+        :root {
+            --primary: #FF69B4;  /* 改為粉紅色 */
+            --secondary: #FFB6C1;  /* 淺粉紅色 */
+            --accent: #DB7093;  /* 深粉紅色 */
+            --background: #FFFFFF;  /* 改為白色背景 */
+            --text: #333333;  /* 深灰色文字 */
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        #research-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        #header {
+            text-align: center;
+            margin-bottom: 30px;
+            background-color: var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        #header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        #header p {
+            color: white;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        #research-log {
+            height: 60vh;
+            overflow-y: auto;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            background: #F8F9FA;
+            border: 1px solid var(--secondary);
+        }
+
+        .entry {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .researcher-entry {
+            background: white;
+            margin-left: 20%;
+            border-radius: 15px 15px 0 15px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .ai-entry {
+            background: white;
+            margin-right: 20%;
+            border-radius: 15px 15px 15px 0;
+            border-right: 4px solid var(--accent);
+        }
+
+        #input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #research-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid var(--secondary);
+            border-radius: 8px;
+            background: white;
+            color: var(--text);
+            font-size: 16px;
+        }
+
+        #submit-button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #submit-button:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .research-step {
+            margin: 8px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .research-data {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin: 10px 0;
+            border: 1px solid var(--secondary);
+        }
+
+        #status-display {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 12px;
+            background: var(--secondary);
+            text-align: center;
+            font-size: 14px;
+            color: white;
+            border-top: 2px solid var(--primary);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 5px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .research-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .research-section h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .research-data {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="research-container">
+        <div id="header">
+            <h1>The Pocket Company</h1>
+            <p>Deep Research研究員by Accucrazy</p>
+        </div>
+        <div id="research-log"></div>
+        <div id="input-container">
+            <input type="text" id="research-input" placeholder="請輸入您的研究問題..." />
+            <button id="submit-button">開始研究</button>
+        </div>
+    </div>
+    <div id="status-display">研究系統已啟動 | 準備就緒</div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8765');
+        const researchLog = document.getElementById('research-log');
+        const researchInput = document.getElementById('research-input');
+        const submitButton = document.getElementById('submit-button');
+        const statusDisplay = document.getElementById('status-display');
+
+        ws.onopen = () => {
+            statusDisplay.textContent = '已連接到研究系統 | 準備就緒';
+        };
+
+        ws.onclose = () => {
+            statusDisplay.textContent = '與研究系統的連接已斷開';
+            addEntry(`
+                <div class="tag">錯誤</div>
+                <p>與研究系統的連接已斷開，請刷新頁面重試。</p>
+            `);
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket Error:', error);
+            statusDisplay.textContent = 'WebSocket 連接錯誤';
+            addEntry(`
+                <div class="tag">錯誤</div>
+                <p>無法連接到研究系統，請確保服務器正在運行。</p>
+            `);
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            switch(data.type) {
+                case 'status':
+                    statusDisplay.textContent = data.content;
+                    break;
+                    
+                case 'step':
+                    addResearchStep(data.content);
+                    break;
+                    
+                case 'intent_analysis':
+                    addEntry(`
+                        <div class="research-section">
+                            <h3>查詢意圖分析</h3>
+                            <div class="research-data">${data.content}</div>
+                        </div>
+                    `);
+                    break;
+                    
+                case 'search_results':
+                    addEntry(`
+                        <div class="research-section">
+                            <h3>搜索結果</h3>
+                            <div class="research-data">${data.content}</div>
+                        </div>
+                    `);
+                    break;
+                    
+                case 'classification':
+                    addEntry(`
+                        <div class="research-section">
+                            <h3>資料分類</h3>
+                            <div class="research-data">${data.content}</div>
+                        </div>
+                    `);
+                    break;
+                    
+                case 'final_result':
+                    addEntry(`
+                        <div class="research-section">
+                            <h3>查詢意圖分析</h3>
+                            <div class="research-data">${data.content.intent_analysis}</div>
+                            
+                            <h3>資料分類</h3>
+                            <div class="research-data">${data.content.classification}</div>
+                            
+                            <h3>深入分析</h3>
+                            <div class="research-data">${data.content.analysis}</div>
+                            
+                            <h3>重要見解</h3>
+                            <div class="research-data">${data.content.insights}</div>
+                        </div>
+                    `);
+                    statusDisplay.textContent = '研究完成 | 準備就緒';
+                    break;
+                    
+                case 'error':
+                    addEntry(`
+                        <div class="tag">錯誤</div>
+                        <p>${data.content}</p>
+                    `);
+                    statusDisplay.textContent = '發生錯誤 | 請重試';
+                    break;
+            }
+        };
+
+        function addResearchStep(step) {
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'research-step';
+            stepDiv.innerHTML = step;
+            researchLog.appendChild(stepDiv);
+            researchLog.scrollTop = researchLog.scrollHeight;
+        }
+
+        function addEntry(content, isResearcher = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `entry ${isResearcher ? 'researcher-entry' : 'ai-entry'}`;
+            messageDiv.innerHTML = content;
+            researchLog.appendChild(messageDiv);
+            researchLog.scrollTop = researchLog.scrollHeight;
+            console.log('Added entry:', content);
+        }
+
+        async function handleResearchQuery() {
+            const query = researchInput.value.trim();
+            if (!query) return;
+
+            console.log('Sending query:', query);
+
+            addEntry(`<div class="tag">查詢</div> ${query}`, true);
+            researchInput.value = '';
+
+            try {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ query: query }));
+                    console.log('Query sent successfully');
+                } else {
+                    console.error('WebSocket is not open. Current state:', ws.readyState);
+                    addEntry(`<div class="tag">錯誤</div> WebSocket 未連接，請刷新頁面重試。`);
+                }
+            } catch (error) {
+                console.error('Error sending query:', error);
+                addEntry(`<div class="tag">錯誤</div> 無法發送查詢：${error.message}`);
+            }
+        }
+
+        submitButton.addEventListener('click', handleResearchQuery);
+        researchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleResearchQuery();
+        });
+
+        // 初始歡迎訊息
+        addEntry(`
+            <div class="tag">系統</div>
+            <h3>歡迎使用 The Pocket Company 深度研究助手</h3>
+            <p>我是您的智慧型研究助手，可以協助您探索和分析各種複雜的研究主題。</p>
+            <div class="research-data">系統狀態：在線
+研究協議：啟動
+分析引擎：就緒</div>
+            <p>請輸入您的研究問題以開始分析。</p>
+        `);
+    </script>
+</body>
+</html> 

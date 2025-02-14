@@ -1,0 +1,19 @@
+# 環境變量
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# 系統文件
+.DS_Store
+Thumbs.db 
